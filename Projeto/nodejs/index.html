@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<body background="C:\Users\caioa\Documents\ENGENHARIA DA COMPUTAÇÃO\2018.2\REDES\projeto\projeto\svg\back.jpg"></body>
+<link rel="icon" href="C:\Users\caioa\Documents\ENGENHARIA DA COMPUTAÇÃO\2018.2\REDES\projeto\projeto\svg\logo.png" type="image/x-icon"/>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Pseudo Twitter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>  
+    <body bgcolor="#87CEFA">
+    <form id="usuario">
+        
+        <input type="hidden" id="hora" name="hora">
+        <input type="hidden" id="date" name="date">
+        <input type="hidden" id="IP"   name="IP">
+        <input type="hidden" id="PORTA"   name="PORTA">
+        <!-- <div class="messages"><center><font color="blue">TIMELINE</font></center></div> -->
+        <span id="msg"></span>
+        <input type="hidden" id="username" name="username" placeholder="@usuario">
+        <input type="hidden" id="message"  name="message" placeholder="No que voce está pensando?">
+        
+        <table>
+        
+        </table>
+        <div id="seguidores"></div>
+
+    </form>
+   
+    <form id="enviar">
+    
+    </form>
+
+    <span id="login">
+    <div><center>
+    <img src="C:\Users\caioa\Documents\ENGENHARIA DA COMPUTAÇÃO\2018.2\REDES\projeto\projeto\svg\sfdd.jpg" alt=" " >
+    </center></div>
+    <input id=nome placeholder="Indique seu nickname"></input>
+    <input id=ip-sv placeholder="IP do servidor para seguir"></input>
+
+    
+    <button onclick="seguir()">Follow Server</button>
+
+    </span>
+
+    <span id="unfollow">
+        
+    </span>
+
+    <script type="text/javascript">
+    //começa conexao com websockts
+    var socket = io('http://localhost:3000'); 
+
+		function id( el ){
+			return document.getElementById( el );
+        }
+
+        function seguir(){
+            id("message").type = "input";
+            id("username").value = id("nome").value;       
+            id("msg").innerHTML='<div class="messages"><center><font color="blue"><b>TIMELINE</b></font></center></div>'; 
+            id("enviar").innerHTML = '<button type="submit">Postar</button>';
+            // alert("Começou a seguir o server em 127.0.0.1:3000")
+            // console.log("Começou a seguir o server em 127.0.0.1:3000")  
+            id("login").innerHTML = " ";
+            id('unfollow').innerHTML = '<button onclick="unfollow()">Unfollow Server</button>';
+            
+        }
+
+        function unfollow(){
+            // alert("Deixou de seguir o servidor");
+           // $('.messages').append('<div class="message">'+" "+ '<strong>' + message.usuario +" deixou de seguir " +'</strong>' + '</div>')
+
+            var author = $('input[name=username]').val();
+            var data = {
+                    usuario: author,
+                                        
+                };
+            socket.emit('unfollow',data)
+
+            id('usuario').innerHTML = '';
+            id("enviar").innerHTML = '';
+            id('login').innerHTML = '<input id=nome placeholder="Indique seu nick"></input> <input id=ip-sv placeholder="IP do servidor para seguir"></input> <button onclick="seguir()">Follow Server</button>';
+            id('unfollow').innerHTML = '';
+        }
+        
+        
+        function date(){
+			hoje = new Date();
+			id('date').value = hoje.getDate() + '/' + hoje.getMonth() + '/' + hoje.getFullYear();
+		}
+        window.onload = date;
+        
+        id('IP').value = "127.0.0.1";
+        id("PORTA").value = "" ;
+        
+		hoje = new Date();
+        id('hora').value = hoje.getHours() + ':' + hoje.getMinutes() + ':' + hoje.getSeconds();
+
+
+        function renderMessage(message){
+            $('.messages').append('<div class="message">'+" "+ '<strong>' + message.usuario +" comentou : " +'</strong>'+ " "  + message.msg + '</div>');
+            $('.messages').append('['+ message.hora +']');
+            $('.messages').append( '<font color="blue">'+ " _____________________________________________________________________" + '</font>');
+        }
+		
+
+        socket.on('seguidores', function(seguidores){
+			$('['+"seguidores"+']').append(seguidores.usuario + " , ");
+        });
+
+        socket.on('coments', function(messages){
+			for(message of messages){
+                renderMessage(message);
+            }
+        });
+
+        socket.on('receivedMessage', function(message){
+            renderMessage(message);
+        });
+
+        $('#enviar').submit(function(event){
+			hoje = new Date();
+            id('hora').value = hoje.getHours() + ':' + hoje.getMinutes() + ':' + hoje.getSeconds();
+            event.preventDefault();
+
+            var author = $('input[name=username]').val();
+			var message = $('input[name=message]').val();
+            var hora = $('input[name=hora]').val();
+            var date = $('input[name=date]').val();
+            var   IP = $('input[name=IP]').val();
+            var PORTA= $('input[name=PORTA]').val();
+            
+          
+            if(author.length && message.length){
+                var messageObject = {
+                    usuario: author,
+                    IP:IP,
+                    PORTA:PORTA,
+                    data:date,
+                    hora: hora,
+                    msg: message,
+                    
+                };
+
+				renderMessage(messageObject);
+				id('message').value =''
+
+                socket.emit('sendMessage', messageObject);
+            }
+        }); 
+    </script>
+</body>
+
+</html>
